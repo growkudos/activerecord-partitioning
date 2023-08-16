@@ -1,16 +1,13 @@
 require 'active_support/concern'
 
-module ActiveRecord::Partitioning
-  module SchemaDumper
-    extend ActiveSupport::Concern
-
-    included do
-      alias_method_chain(:table, :partitioning)
-    end
+module ActiveRecord
+  module Partitioning
+    module SchemaDumper
+      extend ActiveSupport::Concern
 
     # Override the standard table dumping behaviour to include the partition dumping
-    def table_with_partitioning(table, stream)
-      table_without_partitioning(table, stream)
+    def table(table, stream)
+      super(table, stream)
       dump_primary_keys_of(table, stream) # some partitioned tables have composite primary keys
       dump_partitions_of(table, stream)
       stream
@@ -42,6 +39,7 @@ require 'active_record'
 require 'active_record/base'
 require 'active_record/schema_dumper'
 
-class ActiveRecord::SchemaDumper
-  include ActiveRecord::Partitioning::SchemaDumper
+class ActiveRecord
+  class SchemaDumper
+    prepend ActiveRecord::Partitioning::SchemaDumper
 end
