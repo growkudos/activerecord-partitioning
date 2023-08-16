@@ -5,32 +5,40 @@ module ActiveRecord
     module SchemaDumper
       extend ActiveSupport::Concern
 
-    # Override the standard table dumping behaviour to include the partition dumping
-    def table(table, stream)
-      super(table, stream)
-      dump_primary_keys_of(table, stream) # some partitioned tables have composite primary keys
-      dump_partitions_of(table, stream)
-      stream
-    end
-
-    # Dump the necessary Ruby code to partition the given table if it is partitioned.
-    def dump_partitions_of(table, stream)
-      @connection.partition(table) do |partitioning_scheme|
-        stream.puts "  partition_table(#{table.inspect}, #{partitioning_scheme.inspect})"
-        stream.puts
+      # Override the standard table dumping behaviour to include the partition
+      # dumping
+      def table(table, stream)
+        super(table, stream)
+        # some partitioned tables have composite primary keys
+        dump_primary_keys_of(table, stream)
+        dump_partitions_of(table, stream)
+        stream
       end
-    end
 
-    # Dump the primary keys if they are composite
-    def dump_primary_keys_of(table, stream)
-      keys = @connection.primary_keys(table)
-      if keys.length > 1
-        stream.puts "  set_primary_keys(#{table.inspect}, [#{keys.map(&:inspect).join(", ")}])"
-        stream.puts
+      # Dump the necessary Ruby code to partition the given table if it is
+      # partitioned.
+      def dump_partitions_of(table, stream)
+        @connection.partition(table) do |partitioning_scheme|
+          stream.puts(
+            "  partition_table(#{table.inspect}, #{partitioning_scheme.inspect})"
+          )
+          stream.puts
+        end
       end
-    end
 
-    private :dump_partitions_of, :dump_primary_keys_of
+      # Dump the primary keys if they are composite
+      def dump_primary_keys_of(table, stream)
+        keys = @connection.primary_keys(table)
+        if keys.length > 1
+          stream.puts(
+            "  set_primary_keys(#{table.inspect}, [#{keys.map(&:inspect).join(', ')}])"
+          )
+          stream.puts
+        end
+      end
+
+      private :dump_partitions_of, :dump_primary_keys_of
+    end
   end
 end
 
@@ -39,7 +47,8 @@ require 'active_record'
 require 'active_record/base'
 require 'active_record/schema_dumper'
 
-class ActiveRecord
+module ActiveRecord
   class SchemaDumper
     prepend ActiveRecord::Partitioning::SchemaDumper
+  end
 end
