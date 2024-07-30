@@ -9,8 +9,6 @@ module ActiveRecord
       # dumping
       def table(table, stream)
         super(table, stream)
-        # some partitioned tables have composite primary keys
-        dump_primary_keys_of(table, stream)
         dump_partitions_of(table, stream)
         stream
       end
@@ -26,18 +24,7 @@ module ActiveRecord
         end
       end
 
-      # Dump the primary keys if they are composite
-      def dump_primary_keys_of(table, stream)
-        keys = @connection.primary_keys(table)
-        if keys.length > 1
-          stream.puts(
-            "  set_primary_keys(#{table.inspect}, [#{keys.map(&:inspect).join(', ')}])"
-          )
-          stream.puts
-        end
-      end
-
-      private :dump_partitions_of, :dump_primary_keys_of
+      private :dump_partitions_of
     end
   end
 end
